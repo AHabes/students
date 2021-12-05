@@ -1,35 +1,24 @@
 package jdbc;
 
-import java.sql.SQLException;
-import java.util.List;
-
 import code.Student;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import jdbc.url.JDBCUrl;
 import jdbc.url.MySQLURLBuilder;
+
+import java.sql.SQLException;
+import java.util.List;
 
 public class JDBCController implements Controller {
 
     private JDBCUrl builder;
     private JDBCModel model;
     private boolean isLoggedIn;
-    private int activeAccountId;
-    private BooleanProperty updateTable;
-    private ObservableList<String> entryTypes;
 
     public JDBCController() {
         builder = new MySQLURLBuilder(); // JDBCUrl is an abstract it can't be instantiated
         model = new JDBCModel();
         isLoggedIn = false;
-        activeAccountId = -1;
-
-        updateTable = new SimpleBooleanProperty();
-        updateTable.setValue(false);
-        entryTypes = FXCollections.observableArrayList();
-
     }
 
     @Override
