@@ -140,6 +140,8 @@ public class JDBCModel {
         student.setAssignment3Score(rs.getDouble("assignment3Score"));
         student.setAssignment4Score(rs.getDouble("assignment4Score"));
         student.setAssignment5Score(rs.getDouble("assignment5Score"));
+        student.setFinalScore(rs.getDouble("finalScore"));
+        student.setFinalGrade(rs.getString("finalGrade"));
     }
 
     public boolean updateStudentById(int id, Student newStudent) throws SQLException {
