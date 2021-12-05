@@ -9,31 +9,19 @@ import jdbc.url.JDBCUrl;
 
 public interface Controller extends AutoCloseable {
 
-    boolean loginWith( String username, String password);
+    Controller setURLBuilder(JDBCUrl builder);
 
-    Controller setURLBuilder( JDBCUrl builder);
+    Controller setDataBase(String address, String port, String catalog);
 
-    Controller setDataBase( String address, String port, String catalog);
+    Controller addConnectionURLProperty(String key, String value);
 
-    Controller addConnectionURLProperty( String key, String value);
-
-    Controller setCredentials( String user, String pass);
+    Controller setCredentials(String user, String pass);
 
     Controller connect();
-
-    List< String> getColumnNamesOfGlucosEntries();
-
-    List< List< Object>> findAllGlucoseNumbersForLoggedAccount() throws Exception;
 
     boolean isConnected();
 
     boolean isLoggedIn();
-
-    void updateInfo( String name, String yob, String weight);
-
-    ObservableList< String> getEntryTypes();
-
-    void addGlucoseValue( String string, double glucose);
 
     boolean createStudentsDB();
 
@@ -44,4 +32,6 @@ public interface Controller extends AutoCloseable {
     Student getStudentById(int id) throws SQLException;
 
     boolean deleteStudentById(int id) throws SQLException;
+
+    boolean updateStudentById(int id, Student student) throws SQLException;
 }

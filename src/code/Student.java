@@ -1,27 +1,19 @@
 package code;
 
 import jdbc.Controller;
-import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Entity
 public class Student {
     private static final String EMAIL_SUFFIX = "@algomail.com";
-    private static final AtomicInteger ID_GENERATOR = new AtomicInteger(1000);
     private static Controller controller;
-    //   @Id
-    //   @GeneratedValue(strategy = GenerationType.AUTO)
+
     private int studentId;
     private String firstName;
     private String lastName;
@@ -38,7 +30,6 @@ public class Student {
     private String finalGrade;
 
     public Student() {
-
     }
 
     public Student(String firstName, String lastName, LocalDateTime dob, double mt1Score, double mt2Score,
@@ -67,18 +58,81 @@ public class Student {
         Student.controller = controller;
     }
 
+    private double calculateFinalGrade(Student student) {
+        return student.getMt1Score() * 0.25
+                + student.getMt2Score() * 0.25
+                + student.getAssignment1Score() * 0.10
+                + student.getAssignment2Score() * 0.10
+                + student.getAssignment3Score() * 0.10
+                + student.getAssignment4Score() * 0.10
+                + student.getAssignment5Score() * 0.10;
+    }
+
+    private String calculateLetterGrade(double grade) {
+        String letterGrade = "";
+        int finalGrade = (int) Math.round(grade);
+        switch (finalGrade >= 90 ? 0
+                : finalGrade >= 85 ? 1
+                : finalGrade >= 80 ? 2
+                : finalGrade >= 77 ? 3
+                : finalGrade >= 73 ? 4
+                : finalGrade >= 70 ? 5
+                : finalGrade >= 67 ? 6
+                : finalGrade >= 63 ? 7
+                : finalGrade >= 60 ? 8
+                : finalGrade >= 57 ? 9
+                : finalGrade >= 53 ? 10
+                : finalGrade >= 50 ? 11
+                : 12) {
+            case 0 -> letterGrade = "A+";
+            case 1 -> letterGrade = "A";
+            case 2 -> letterGrade = "A-";
+            case 3 -> letterGrade = "B+";
+            case 4 -> letterGrade = "B";
+            case 5 -> letterGrade = "B-";
+            case 6 -> letterGrade = "C+";
+            case 7 -> letterGrade = "C";
+            case 8 -> letterGrade = "C-";
+            case 9 -> letterGrade = "D+";
+            case 10 -> letterGrade = "D";
+            case 11 -> letterGrade = "D-";
+            case 12 -> letterGrade = "F";
+            default -> System.out.println("Unknown command!");
+        }
+        return letterGrade;
+    }
+
+    public boolean addStudent(Student student) throws SQLException {
+        double finalScore = calculateFinalGrade(student);
+        String finalGrade = calculateLetterGrade(finalScore);
+        student.setFinalScore(finalScore);
+        student.setFinalGrade(finalGrade);
+        controller.addStudent(student);
+        return true;
+    }
+
+
     //- List all students
-    public static List<Student> getAllStudents() throws SQLException {
+    public List<Student> getAllStudents() throws SQLException {
         return controller.getAllStudents();
     }
 
     //- Fetch a single student by ID
-    public static Student getStudentById(int id) throws SQLException {
+    public Student getStudentById(int id) throws SQLException {
         return controller.getStudentById(id);
     }
 
+    //- Change a single student information by ID
+    public boolean updateStudentById(int id, Student student) throws SQLException {
+        double finalScore = calculateFinalGrade(student);
+        String finalGrade = calculateLetterGrade(finalScore);
+        student.setFinalScore(finalScore);
+        student.setFinalGrade(finalGrade);
+        return controller.updateStudentById(id, student);
+    }
+
     //- Remove a single student from the database by ID
-    public static boolean deleteStudentById(int id) throws SQLException {
+    public boolean deleteStudentById(int id) throws SQLException {
         return controller.deleteStudentById(id);
     }
 
@@ -102,12 +156,6 @@ public class Student {
                 '}';
     }
 
-//- Change a single student information by ID
-
-    public boolean addStudents() throws SQLException {
-        controller.addStudent(this);
-        return true;
-    }
 
     public int getStudentId() {
         return studentId;

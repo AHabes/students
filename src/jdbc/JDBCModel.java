@@ -3,38 +3,33 @@ package jdbc;
 import code.Student;
 
 import java.sql.*;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
-import java.time.*;
-import java.util.*;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 public class JDBCModel {
-
-    private static final String[] COL_NAMES_GOLUCOS = {"Id", "EntryType", "GlucoseValue", "TakenAt"};
-    private static final String[] COL_NAMES_ACCOUNT = {"Name", "YearOfBirth", "Weight"};
-
-    private static final String QUERY_ENTRYTYPE_SELECT = "SELECT EntryType FROM entrytype";
-
 
     private static final String QUERY_CREATE_DB =
             "CREATE TABLE IF NOT EXISTS students (studentId int PRIMARY KEY AUTO_INCREMENT NOT NULL, firstName varchar(255), " +
                     "lastName varchar(255), dob date, email varchar (255), mt1Score double , mt2Score double," +
                     "assignment1Score double,assignment2Score double,assignment3Score double," +
-                    "assignment4Score double, assignment5Score double)";
+                    "assignment4Score double, assignment5Score double, finalScore double, finalGrade varchar (5))";
 
 
     private static final String QUERY_ADD_STUDENT = "INSERT INTO students (firstName, lastName, dob, email, mt1Score, mt2Score," +
-            "assignment1Score, assignment2Score, assignment3Score, assignment4Score, assignment5Score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "assignment1Score, assignment2Score, assignment3Score, assignment4Score, assignment5Score, finalScore, finalGrade ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String QUERY_GET_STUDENTS = "SELECT * FROM students";
     private static final String QUERY_GET_STUDENT_BY_ID = "SELECT * FROM students WHERE studentId=?";
     private static final String QUERY_DELETE_STUDENT_BY_ID = "DELETE FROM students WHERE studentId=?";
+    private static final String QUERY_UPDATE_STUDENT_BY_ID = "UPDATE students SET firstName=?, lastName=?, dob=?," +
+            "email=?,mt1Score=?, mt2Score=?, assignment1Score=?, assignment2Score=?, assignment3Score=?," +
+            " assignment4Score=?, assignment5Score=?, finalScore=?, finalGrade=? WHERE studentId=?";
 
-    private static final String QUERY_ACCOUNT_SELECT = "SELECT Name, YearOfBirth, Weight FROM account where id=?";
-    private static final String QUERY_ACCOUNT_UPDATE = "UPDATE account SET Name = ?, YearOfBirth = ?, Weight = ? WHERE Id = ?";
-    private static final String QUERY_VALIDATE = "SELECT AccountId FROM security where security.username=? and security.password=?";
-    private static final String QUERY_GLUCOSE_INSERT = "INSERT INTO glucosevalue(EntryTypeId,AccountId,GlucoseValue,TakenAt)VALUES((select id from entrytype where entrytype=?),?,?,now())";
-    private static final String QUERY_GLUCOSE_NUMBERS = "SELECT g.Id, (SELECT EntryType FROM entrytype where g.EntryTypeId=Id ) as EntryType, g.GlucoseValue, g.TakenAt FROM glucosevalue g where AccountId=?";
 
     private Connection connection;
     private String user;
@@ -61,111 +56,6 @@ public class JDBCModel {
             throw new SQLException("No connection to DB");
     }
 
-    public void addGlucoseValue(String entryType, int activeAccountId, double glucose) throws SQLException {
-
-        hasValidConnection();
-
-        try (PreparedStatement ps = connection.prepareStatement(QUERY_GLUCOSE_INSERT)) {
-            ps.setString(1, entryType);
-            ps.setInt(2, activeAccountId);
-            ps.setDouble(3, glucose);
-
-            ps.executeUpdate();
-        }
-    }
-
-    public List<String> getEntryTypes() throws SQLException {
-        hasValidConnection();
-
-        List<String> types = new LinkedList<>();
-
-        try (PreparedStatement ps = connection.prepareStatement(QUERY_ENTRYTYPE_SELECT)) {
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    types.add(rs.getString(1));
-                }
-            }
-        }
-        return types;
-    }
-
-    public List<String> getAccountInfoFor(int activeAccountId) throws SQLException {
-        hasValidConnection();
-
-        List<String> info = new LinkedList<>();
-
-        try (PreparedStatement ps = connection.prepareStatement(QUERY_ACCOUNT_SELECT)) {
-            ps.setInt(1, activeAccountId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    for (String col : COL_NAMES_ACCOUNT) {
-                        info.add(rs.getString(col));
-                    }
-                }
-            }
-        }
-        return info;
-    }
-
-    public void updateInfo(String name, String yob, String weight, int activeAccountId) throws SQLException {
-        Objects.requireNonNull(name, "Name cannot be null");
-        Objects.requireNonNull(yob, "Year of Birth cannot be null");
-        Objects.requireNonNull(weight, "Weight cannot be null");
-
-        hasValidConnection();
-
-        try (PreparedStatement ps = connection.prepareStatement(QUERY_ACCOUNT_UPDATE)) {
-            ps.setString(1, name);
-            ps.setString(2, yob);
-            ps.setString(3, weight);
-            ps.setInt(4, activeAccountId);
-
-            ps.executeUpdate();
-        }
-    }
-
-    public int loginWith(String username, String password) throws SQLException {
-        Objects.requireNonNull(username, "Username cannot be null");
-        Objects.requireNonNull(password, "Password cannot be null");
-
-        hasValidConnection();
-
-        try (PreparedStatement ps = connection.prepareStatement(QUERY_VALIDATE)) {
-            ps.setString(1, username);
-            ps.setString(2, password);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-            }
-        }
-        return -1;
-    }
-
-    public List<String> getColumnNames() {
-        return List.of(COL_NAMES_GOLUCOS);
-    }
-
-    public List<List<Object>> getAllGlucoseNumbers(int activeAccountId) throws SQLException {
-        hasValidConnection();
-
-        List<List<Object>> rows = new LinkedList<>();
-
-        try (PreparedStatement ps = connection.prepareStatement(QUERY_GLUCOSE_NUMBERS)) {
-            ps.setInt(1, activeAccountId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    List<Object> cols = new LinkedList<>();
-                    for (String col : COL_NAMES_GOLUCOS) {
-                        cols.add(rs.getObject(col));
-                    }
-                    rows.add(cols);
-                }
-            }
-        }
-        return rows;
-    }
-
     public void close() throws SQLException {
         if (connection != null)
             connection.close();
@@ -180,21 +70,7 @@ public class JDBCModel {
     public void addStudent(Student student) throws SQLException {
         hasValidConnection();
         try (PreparedStatement ps = connection.prepareStatement(QUERY_ADD_STUDENT, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, student.getFirstName());
-            ps.setString(2, student.getLastName());
-
-            LocalDateTime dob = student.getDob();
-            dob.atZone(ZoneId.of("UTC"));
-            ps.setObject(3, dob);
-
-            ps.setString(4, student.getEmail());
-            ps.setDouble(5, student.getMt1Score());
-            ps.setDouble(6, student.getMt2Score());
-            ps.setDouble(7, student.getAssignment1Score());
-            ps.setDouble(8, student.getAssignment2Score());
-            ps.setDouble(9, student.getAssignment3Score());
-            ps.setDouble(10, student.getAssignment4Score());
-            ps.setDouble(11, student.getAssignment5Score());
+            setDetails(student, ps);
             ps.executeUpdate();
         }
     }
@@ -217,13 +93,11 @@ public class JDBCModel {
         return students;
     }
 
-
     public Student getStudentById(int id) throws SQLException {
         hasValidConnection();
 
         Student student = new Student();
         try (PreparedStatement ps = connection.prepareStatement(QUERY_GET_STUDENT_BY_ID)) {
-            System.out.println("id: " + id);
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next())
@@ -268,5 +142,35 @@ public class JDBCModel {
         student.setAssignment5Score(rs.getDouble("assignment5Score"));
     }
 
+    public boolean updateStudentById(int id, Student newStudent) throws SQLException {
+        hasValidConnection();
+
+        try (PreparedStatement ps = connection.prepareStatement(QUERY_UPDATE_STUDENT_BY_ID)) {
+            setDetails(newStudent, ps);
+            ps.setInt(14, id);
+            ps.executeUpdate();
+        }
+        return true;
+    }
+
+    private void setDetails(Student student, PreparedStatement ps) throws SQLException {
+        ps.setString(1, student.getFirstName());
+        ps.setString(2, student.getLastName());
+
+        LocalDateTime dob = student.getDob();
+        dob.atZone(ZoneId.of("UTC"));
+        ps.setObject(3, dob);
+
+        ps.setString(4, student.getEmail());
+        ps.setDouble(5, student.getMt1Score());
+        ps.setDouble(6, student.getMt2Score());
+        ps.setDouble(7, student.getAssignment1Score());
+        ps.setDouble(8, student.getAssignment2Score());
+        ps.setDouble(9, student.getAssignment3Score());
+        ps.setDouble(10, student.getAssignment4Score());
+        ps.setDouble(11, student.getAssignment5Score());
+        ps.setDouble(12, student.getFinalScore());
+        ps.setString(13, student.getFinalGrade());
+    }
 }
 

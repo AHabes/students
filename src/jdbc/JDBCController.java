@@ -38,23 +38,6 @@ public class JDBCController implements Controller {
 
     }
 
-    @Override
-    public boolean loginWith(String username, String password) {
-        isLoggedIn = false;
-        try {
-            activeAccountId = model.loginWith(username, password);
-            isLoggedIn = activeAccountId != -1;
-            if (isLoggedIn) {
-                List<String> info = model.getAccountInfoFor(activeAccountId);
-                updateTable.setValue(!updateTable.getValue()); //negate the value if updateTable which was false
-                getEntryTypes();
-            }
-        } catch (SQLException e) {
-            throw new IllegalStateException(e);
-        }
-        return isLoggedIn;
-    }
-
     private void hasValidLogin() {
         if (!isLoggedIn())
             throw new IllegalStateException("Not logged in");
@@ -95,21 +78,6 @@ public class JDBCController implements Controller {
     }
 
     @Override
-    public List<String> getColumnNamesOfGlucosEntries() {
-        return model.getColumnNames();
-    }
-
-    @Override
-    public List<List<Object>> findAllGlucoseNumbersForLoggedAccount() throws Exception {
-        hasValidLogin(); // should only work if login is true
-        try {
-            return model.getAllGlucoseNumbers(activeAccountId);
-        } catch (SQLException e) {
-            throw new IllegalStateException("Validation failed", e);
-        }
-    }
-
-    @Override
     public boolean isConnected() {
         try {
             return model.isConnected();
@@ -122,44 +90,6 @@ public class JDBCController implements Controller {
     @Override
     public boolean isLoggedIn() {
         return isLoggedIn;
-    }
-
-    @Override
-    public void updateInfo(String name, String yob, String weight) {
-        try {
-            model.updateInfo(name, yob, weight, activeAccountId);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new IllegalStateException();
-
-        }
-    }
-
-    @Override
-    public ObservableList<String> getEntryTypes() {
-        if (isConnected()) {
-            try {
-                entryTypes.clear();
-                entryTypes.addAll(model.getEntryTypes());
-            } catch (SQLException e) {
-                e.printStackTrace();
-                throw new IllegalStateException();
-            }
-        }
-        return entryTypes;
-    }
-
-    @Override
-    public void addGlucoseValue(String string, double glucose) {
-        try {
-            System.out.print(
-                    "addGlucoseValue " + string + " glucose: " + glucose + "activeAccountId: " + activeAccountId);
-            model.addGlucoseValue(string, activeAccountId, glucose);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            throw new IllegalStateException();
-
-        }
     }
 
     @Override
@@ -176,7 +106,6 @@ public class JDBCController implements Controller {
 
     @Override
     public void addStudent(Student student) throws SQLException {
-        System.out.println("adding the student");
         model.addStudent(student);
     }
 
@@ -191,9 +120,13 @@ public class JDBCController implements Controller {
     }
 
     @Override
+    public boolean updateStudentById(int id, Student student) throws SQLException {
+        return model.updateStudentById(id, student);
+    }
+
+    @Override
     public boolean deleteStudentById(int id) throws SQLException {
         return model.deleteStudentById(id);
     }
-
 
 }
